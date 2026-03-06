@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2, Loader2, Users, ShieldCheck } from "lucide-react"
+import { Plus, Trash2, Pencil, Loader2, Users, ShieldCheck } from "lucide-react"
 
 interface AdminUser {
   id: string
@@ -44,9 +44,11 @@ interface AdminUser {
 
 export default function AdminAdminsPage() {
   const [admins, setAdmins] = useState<AdminUser[]>([])
+  const [currentAdminEmail, setCurrentAdminEmail] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [form, setForm] = useState({ email: "", password: "" })
 
@@ -54,7 +56,8 @@ export default function AdminAdminsPage() {
     const res = await fetch("/api/admin/admins")
     if (res.ok) {
       const data = await res.json()
-      setAdmins(data)
+      setAdmins(data.admins || [])
+      setCurrentAdminEmail(data.currentAdminEmail || "")
     }
     setLoading(false)
   }
@@ -63,14 +66,37 @@ export default function AdminAdminsPage() {
     fetchAdmins()
   }, [])
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     setSaving(true)
     setError("")
 
-    const res = await fetch("/api/admin/admins", {
-      method: "POST",
+    const url = editingId 
+      ? `/api/admin/admins/${editingId}` 
+      : "/api/admin/admins"
+    const method = editingId ? "PUT" : "POST"
+
+    // If editing, password is optional. If creating, it's required.
+    if (!editingId && (!form.email || !form.password)) {
+      setError("البريد الإلكتروني وكلمة المرور مطلوبان")
+      setSaving(false)
+      return
+    }
+
+    if (editingId && !form.email) {
+      setError("البريد الإلكتروني مطلوب")
+      setSaving(false)
+      return
+    }
+
+    const payload: any = { email: form.email }
+    if (form.password) {
+      payload.password = form.password
+    }
+
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     })
 
     const data = await res.json()
@@ -82,14 +108,28 @@ export default function AdminAdminsPage() {
     }
 
     setDialogOpen(false)
+    setEditingId(null)
     setForm({ email: "", password: "" })
     setError("")
     fetchAdmins()
     setSaving(false)
   }
 
-  const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/admin/admins/${id}`, { method: "DELETE" })
+  const handleEdit = (admin: AdminUser) => {
+    setEditingId(admin.id)
+    setForm({ email: admin.email, password: "" })
+    setError("")
+    setDialogOpen(true)
+  }
+
+  const openCreateDialog = () => {
+    setEditingId(null)
+    setForm({ email: "", password: "" })
+    setError("")
+    setDialogOpen(true)
+  }
+
+  const handleDelete = async (id: string) => {    const res = await fetch(`/api/admin/admins/${id}`, { method: "DELETE" })
     const data = await res.json()
 
     if (!res.ok) {
@@ -107,18 +147,22 @@ export default function AdminAdminsPage() {
           <h1 className="text-3xl font-bold text-foreground">المشرفين</h1>
           <p className="text-muted-foreground mt-1">إدارة حسابات المشرفين</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {currentAdminEmail === "admin_2026@gmail.com" && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-gold text-primary-foreground hover:bg-gold-light">
+            <Button onClick={openCreateDialog} className="bg-gold text-primary-foreground hover:bg-gold-light">
               <Plus className="ml-2 h-4 w-4" />
               مشرف جديد
             </Button>
           </DialogTrigger>
           <DialogContent dir="rtl">
             <DialogHeader>
-              <DialogTitle>إضافة مشرف جديد</DialogTitle>
+              <DialogTitle>{editingId ? "تعديل بيانات المشرف" : "إضافة مشرف جديد"}</DialogTitle>
               <DialogDescription>
-                أضف حساب مشرف جديد للوحة التحكم
+                {editingId 
+                  ? "قم بتحديث البريد الإلكتروني أو كلمة المرور. اترك كلمة المرور فارغة إذا لم ترغب بتغييرها." 
+                  : "أضف حساب مشرف جديد للوحة التحكم"
+                }
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -141,8 +185,9 @@ export default function AdminAdminsPage() {
                   type="password"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="••••••••"
+                  placeholder={editingId ? "•••••••• (اختياري)" : "••••••••"}
                   className="bg-secondary/80 border-border/50"
+                  dir="ltr"
                 />
               </div>
               {error && (
@@ -156,16 +201,17 @@ export default function AdminAdminsPage() {
                 <Button variant="ghost">إلغاء</Button>
               </DialogClose>
               <Button
-                onClick={handleCreate}
-                disabled={saving || !form.email || !form.password}
+                onClick={handleSave}
+                disabled={saving || !form.email || (!editingId && !form.password)}
                 className="bg-gold text-primary-foreground hover:bg-gold-light"
               >
                 {saving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                إضافة المشرف
+                {editingId ? "حفظ التعديلات" : "إضافة المشرف"}
               </Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {loading ? (
@@ -209,18 +255,35 @@ export default function AdminAdminsPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 hover:text-destructive"
-                          disabled={admins.length <= 1 || admin.email === "admin_2026@gmail.com"}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent dir="rtl">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(admin)}
+                        className="h-8 w-8 hover:text-gold"
+                        disabled={
+                          admin.email === "admin_2026@gmail.com" || 
+                          currentAdminEmail !== "admin_2026@gmail.com"
+                        }
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:text-destructive"
+                            disabled={
+                              admins.length <= 1 || 
+                              admin.email === "admin_2026@gmail.com" || 
+                              currentAdminEmail !== "admin_2026@gmail.com"
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent dir="rtl">
                         <AlertDialogHeader>
                           <AlertDialogTitle>حذف المشرف</AlertDialogTitle>
                           <AlertDialogDescription>
@@ -238,6 +301,7 @@ export default function AdminAdminsPage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
