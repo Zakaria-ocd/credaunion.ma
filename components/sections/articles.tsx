@@ -1,24 +1,100 @@
 "use client"
 
-import { articles } from "@/lib/data"
+import { useState, useEffect } from "react"
+import { articles as staticArticles } from "@/lib/data"
 import { Motion } from "@/components/ui/motion"
-import { ArrowLeft, Calendar, Clock, Tag, ArrowUpLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ArrowLeft, Calendar, Clock, Tag, ArrowUpLeft, Loader2 } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
+import type { Article } from "@/lib/types"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
-export function Articles() {
-  const featured = articles[0]
-  const rest = articles.slice(1)
+interface ArticlesProps {
+  initialArticles?: Article[]
+  initialTotalPages?: number
+}
+
+export function Articles({ initialArticles = [], initialTotalPages = 0 }: ArticlesProps) {
+  const [articles, setArticles] = useState<Article[]>(initialArticles)
+  const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(6)
+  const [totalPages, setTotalPages] = useState(initialTotalPages)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const fetchArticles = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/articles?page=${page}&limit=${limit}`)
+      if (res.ok) {
+        const data = await res.json()
+        setArticles(data.articles || [])
+        setTotalPages(data.totalPages || 0)
+      }
+    } catch (error) {
+      console.error("Failed to fetch articles:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Refetch when page or limit changes, but skip the very first render 
+  // since we already have the initial data from server.
+  useEffect(() => {
+    if (!mounted) return
+    fetchArticles()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, mounted])
+
+  const handleLimitChange = (value: string) => {
+    setLimit(parseInt(value))
+    setPage(1)
+  }
+
+  // Map dynamic data to the structure the user's design expects
+  const articlesToDisplay = (articles.length > 0 ? articles : staticArticles).map(art => ({
+    id: art.id,
+    title: art.title,
+    excerpt: art.excerpt,
+    // Handle property name differences between dynamic/static
+    image: (art as any).cover_image_url || (art as any).image,
+    date: (art as any).date || new Date((art as any).published_at || (art as any).created_at).toLocaleDateString("ar", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
+    category: (art as any).category || "رؤى السوق",
+    readTime: (art as any).readTime || "5 دقائق قراءة",
+    slug: (art as any).slug
+  }))
 
   return (
     <section id="articles" className="relative py-24 lg:py-32 bg-secondary/20 overflow-hidden">
-      {/* Background */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
+      {/* Background Decor */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-px bg-linear-to-r from-transparent via-gold/20 to-transparent" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <Motion variant="fade-up">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-16 gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-16 gap-8">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/[0.08] px-4 py-2 text-sm text-gold mb-6">
                 {'آخر الأخبار'}
@@ -27,138 +103,133 @@ export function Articles() {
                 {'أخبار '}<span className="text-gradient-gold">{'وتحليلات'}</span>
               </h2>
             </div>
-            <Button
-              variant="outline"
-              className="border-gold/30 text-gold hover:bg-gold/10 hover:text-gold-light transition-all duration-300 hover:scale-105 hover:border-gold/50 shrink-0"
-            >
-              {'عرض جميع المقالات'}
-              <ArrowLeft className="mr-2 h-4 w-4" />
-            </Button>
+
+            <div className="flex items-center gap-4 bg-card/30 p-2 rounded-2xl border border-border/50 shrink-0">
+              <span className="text-sm text-muted-foreground mr-2">{'عرض:'}</span>
+              <Select value={limit.toString()} onValueChange={handleLimitChange}>
+                <SelectTrigger className="w-20 bg-background border-border/50 focus:ring-gold/30">
+                  <SelectValue placeholder="6" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6].map((num) => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </Motion>
 
-        {/* Featured + Grid layout */}
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Featured article - large card */}
-          <Motion variant="fade-right" delay={100} duration={800}>
-            <article className="group relative h-full rounded-3xl border border-border/50 bg-card/50 overflow-hidden transition-all duration-600 hover:border-gold/40 hover:shadow-2xl hover:shadow-gold/[0.08]">
-              {/* Image area */}
-              <div className="relative h-64 lg:h-72 overflow-hidden">
-                <Image
-                  src={featured.image}
-                  alt={featured.title}
-                  fill
-                  className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                />
-                {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
-
-                {/* Category badge */}
-                <div className="absolute top-5 right-5 flex items-center gap-1.5 rounded-full bg-gold text-primary-foreground px-4 py-1.5 text-xs font-bold shadow-lg shadow-gold/30 transition-all duration-300 group-hover:scale-105">
-                  <Tag className="h-3 w-3" />
-                  {featured.category}
-                </div>
-
-                {/* Arrow icon on hover */}
-                <div className="absolute top-5 left-5 flex h-10 w-10 items-center justify-center rounded-full bg-foreground/10 backdrop-blur-sm border border-foreground/10 opacity-0 scale-50 transition-all duration-500 group-hover:opacity-100 group-hover:scale-100">
-                  <ArrowUpLeft className="h-5 w-5 text-foreground" />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-8">
-                {/* Meta info */}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {featured.date}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" />
-                    {featured.readTime}
-                  </span>
-                </div>
-
-                {/* Title */}
-                <h3 className="text-2xl font-bold mb-4 text-foreground leading-snug transition-colors duration-300 group-hover:text-gold">
-                  {featured.title}
-                </h3>
-
-                {/* Excerpt */}
-                <p className="text-muted-foreground leading-relaxed mb-6">
-                  {featured.excerpt}
-                </p>
-
-                {/* Read more */}
-                <div className="flex items-center gap-2 text-gold font-medium transition-all duration-300 group-hover:gap-3">
-                  <span>{'اقرأ المزيد'}</span>
-                  <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
-                </div>
-              </div>
-            </article>
-          </Motion>
-
-          {/* Side articles */}
-          <div className="flex flex-col gap-6">
-            {rest.map((article, index) => (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-gold" />
+            <p className="text-muted-foreground animate-pulse">{'جاري تحميل المقالات...'}</p>
+          </div>
+        ) : articlesToDisplay.length === 0 ? (
+          <div className="text-center py-20 bg-card/20 rounded-3xl border border-dashed border-border/50">
+            <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-gold/10 text-gold mb-6">
+              <Tag className="h-10 w-10" />
+            </div>
+            <h3 className="text-2xl font-bold mb-2">{'لا توجد مقالات'}</h3>
+            <p className="text-muted-foreground">{'لم يتم نشر أي مقالات في هذا القسم بعد.'}</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {articlesToDisplay.map((article, index) => (
               <Motion
                 key={article.id}
-                variant="fade-left"
-                delay={200 + index * 150}
-                duration={700}
+                variant="fade-up"
+                delay={index * 100}
               >
-                <article className="group relative flex flex-col sm:flex-row rounded-2xl border border-border/50 bg-card/50 overflow-hidden transition-all duration-500 hover:border-gold/40 hover:shadow-2xl hover:shadow-gold/[0.08] hover:-translate-y-1">
-                  {/* Image */}
-                  <div className="relative w-full sm:w-48 h-48 sm:h-auto shrink-0 overflow-hidden">
-                    <Image
-                      src={article.image}
-                      alt={article.title}
-                      fill
-                      className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                    />
-                    <div className="absolute inset-0 bg-background/30 transition-opacity duration-500 group-hover:opacity-0" />
-                    {/* Category */}
-                    <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-gold text-primary-foreground px-3 py-1 text-[10px] font-bold shadow-md">
-                      <Tag className="h-2.5 w-2.5" />
-                      {article.category}
+                <Link href={`/articles/${article.slug}`}>
+                  <article className="group h-full flex flex-col rounded-3xl border border-border/50 bg-card/50 overflow-hidden transition-all duration-500 hover:border-gold/40 hover:shadow-2xl hover:shadow-gold/[0.08] hover:-translate-y-2">
+                    <div className="relative h-56 w-full overflow-hidden">
+                      <Image
+                        src={article.image || "/images/placeholder.jpg"}
+                        alt={article.title}
+                        fill
+                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                      />
+                      <div className="absolute top-4 right-4 rounded-full bg-gold text-primary-foreground px-4 py-1.5 text-xs font-bold shadow-lg shadow-gold/30">
+                        {article.category}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 p-6 flex flex-col justify-center">
-                    {/* Meta */}
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {article.date}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {article.readTime}
-                      </span>
+                    
+                    <div className="flex-1 p-8">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {article.date}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5" />
+                          {article.readTime}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-xl font-bold mb-4 text-foreground leading-tight transition-colors duration-300 group-hover:text-gold line-clamp-2">
+                        {article.title}
+                      </h3>
+                      
+                      <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-3">
+                        {article.excerpt}
+                      </p>
+                      
+                      <div className="flex items-center gap-2 text-gold font-medium transition-all duration-300 group-hover:gap-3 mt-auto">
+                        <span>{'اقرأ المزيد'}</span>
+                        <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
+                      </div>
                     </div>
-
-                    {/* Title */}
-                    <h3 className="text-lg font-bold mb-2 text-foreground leading-snug transition-colors duration-300 group-hover:text-gold line-clamp-2">
-                      {article.title}
-                    </h3>
-
-                    {/* Excerpt */}
-                    <p className="text-muted-foreground text-sm leading-relaxed line-clamp-2 mb-3">
-                      {article.excerpt}
-                    </p>
-
-                    {/* Read more */}
-                    <div className="flex items-center gap-2 text-gold text-sm font-medium opacity-0 translate-x-2 transition-all duration-400 group-hover:opacity-100 group-hover:translate-x-0">
-                      <span>{'اقرأ المزيد'}</span>
-                      <ArrowLeft className="h-3.5 w-3.5" />
-                    </div>
-                  </div>
-                </article>
+                  </article>
+                </Link>
               </Motion>
             ))}
           </div>
-        </div>
+        )}
+
+        {!loading && totalPages > 1 && (
+          <div className="flex justify-center mt-12">
+            <Pagination>
+              <PaginationContent className="bg-card/50 border border-border/50 p-1 rounded-full px-4" dir="ltr">
+                {page > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      onClick={() => setPage(page - 1)} 
+                      className="cursor-pointer hover:bg-gold/10 hover:text-gold border-none" 
+                    />
+                  </PaginationItem>
+                )}
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      onClick={() => setPage(p)}
+                      isActive={page === p}
+                      className={`cursor-pointer border-none rounded-full h-10 w-10 ${
+                        page === p 
+                          ? "bg-gold text-primary-foreground hover:bg-gold-light" 
+                          : "hover:bg-gold/10 hover:text-gold"
+                      }`}
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+                {page < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext 
+                      onClick={() => setPage(page + 1)} 
+                      className="cursor-pointer hover:bg-gold/10 hover:text-gold border-none" 
+                    />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
     </section>
   )

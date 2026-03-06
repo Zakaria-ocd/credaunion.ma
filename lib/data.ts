@@ -38,6 +38,7 @@ export interface Article {
   date: string
   category: string
   readTime: string
+  slug: string
 }
 
 export interface Testimonial {
@@ -176,6 +177,7 @@ export const articles: Article[] = [
     date: "28 فبراير 2026",
     category: "رؤى السوق",
     readTime: "5 دقائق قراءة",
+    slug: "interest-rates-impact"
   },
   {
     id: "2",
@@ -186,6 +188,7 @@ export const articles: Article[] = [
     date: "20 فبراير 2026",
     category: "التخطيط العقاري",
     readTime: "7 دقائق قراءة",
+    slug: "tax-strategies"
   },
   {
     id: "3",
@@ -196,6 +199,7 @@ export const articles: Article[] = [
     date: "14 فبراير 2026",
     category: "التطوير العقاري",
     readTime: "6 دقائق قراءة",
+    slug: "market-volatility"
   },
 ]
 

@@ -12,11 +12,19 @@ import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 
 export default async function Home() {
-   const cookieStore = await cookies()
+  const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
 
-  const { data: instruments } = await supabase.from('instruments').select()
-  console.log(instruments);
+  // Fetch published articles for the public site initial load
+  const { data: articles, count } = await supabase
+    .from('articles')
+    .select('*', { count: 'exact' })
+    .not('published_at', 'is', null)
+    .order('published_at', { ascending: false })
+    .range(0, 5) // Fetch the first 6 articles for the default limit
+
+  const totalPages = Math.ceil((count || 0) / 6)
+
   return (
     <main>
       <Navbar />
@@ -26,7 +34,7 @@ export default async function Home() {
       <Advantages />
       <Process />
       <Testimonials />
-      <Articles />
+      <Articles initialArticles={articles || []} initialTotalPages={totalPages} />
       <Contact />
       <Footer />
     </main>
