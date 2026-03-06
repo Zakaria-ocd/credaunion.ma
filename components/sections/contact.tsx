@@ -1,10 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { Motion } from "@/components/ui/motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Phone, Mail, MapPin, Send } from "lucide-react"
+import { Phone, Mail, MapPin, Send, Loader2, CheckCircle2 } from "lucide-react"
 
 const contactInfo = [
   {
@@ -27,17 +28,58 @@ const contactInfo = [
 ]
 
 export function Contact() {
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState("")
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+    setSuccess(false)
+
+    const formData = new FormData(e.currentTarget)
+    const body = {
+      name: `${formData.get("firstName")} ${formData.get("lastName")}`.trim(),
+      email: formData.get("email"),
+      subject: formData.get("subject"),
+      message: formData.get("message"),
+    }
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || "حدث خطأ أثناء إرسال الرسالة")
+        setLoading(false)
+        return
+      }
+
+      setSuccess(true)
+      ;(e.target as HTMLFormElement).reset()
+    } catch {
+      setError("حدث خطأ في الاتصال")
+    }
+
+    setLoading(false)
+  }
+
   return (
     <section id="contact" className="relative py-24 lg:py-32 overflow-hidden">
       {/* Background accents */}
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gold/[0.03] rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gold/[0.02] rounded-full blur-[100px]" />
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gold/3 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gold/2 rounded-full blur-[100px]" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <Motion variant="fade-up">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/[0.08] px-4 py-2 text-sm text-gold mb-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/8 px-4 py-2 text-sm text-gold mb-6">
               {'تواصل معنا'}
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-5 text-balance">
@@ -58,7 +100,7 @@ export function Contact() {
               <Motion key={index} variant="fade-up" delay={index * 100}>
                 <Wrapper
                   {...(item.href ? { href: item.href } : {})}
-                  className="group flex flex-col items-center text-center rounded-2xl border border-border/50 bg-card/50 p-8 transition-all duration-500 hover:border-gold/40 hover:shadow-2xl hover:shadow-gold/[0.08] hover:-translate-y-2"
+                  className="group flex flex-col items-center text-center rounded-2xl border border-border/50 bg-card/50 p-8 transition-all duration-500 hover:border-gold/40 hover:shadow-2xl hover:shadow-gold/8 hover:-translate-y-2"
                 >
                   <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold/10 border border-gold/20 mb-5 transition-all duration-500 group-hover:bg-gold/20 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-gold/20">
                     <Icon className="h-6 w-6 text-gold" />
@@ -87,7 +129,20 @@ export function Contact() {
               {'الحي المالي، الرياض'}
             </p>
 
-            <form className="flex flex-col gap-5">
+            {success && (
+              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-4 mb-6 flex items-center gap-3 text-emerald-400">
+                <CheckCircle2 className="h-5 w-5 shrink-0" />
+                <p className="text-sm font-medium">تم إرسال رسالتك بنجاح! سنتواصل معك قريباً.</p>
+              </div>
+            )}
+
+            {error && (
+              <div className="rounded-xl bg-destructive/10 border border-destructive/30 p-4 mb-6 text-sm text-destructive text-center">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div className="grid sm:grid-cols-2 gap-5">
                 <div>
                   <label
@@ -98,7 +153,9 @@ export function Contact() {
                   </label>
                   <Input
                     id="firstName"
+                    name="firstName"
                     placeholder="أدخل اسمك الأول"
+                    required
                     className="bg-secondary/80 border-border/50 focus:border-gold focus:ring-gold/20 text-foreground placeholder:text-muted-foreground h-12 rounded-xl transition-all duration-300"
                   />
                 </div>
@@ -111,6 +168,7 @@ export function Contact() {
                   </label>
                   <Input
                     id="lastName"
+                    name="lastName"
                     placeholder="أدخل اسم العائلة"
                     className="bg-secondary/80 border-border/50 focus:border-gold focus:ring-gold/20 text-foreground placeholder:text-muted-foreground h-12 rounded-xl transition-all duration-300"
                   />
@@ -125,8 +183,10 @@ export function Contact() {
                 </label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="أدخل بريدك الإلكتروني"
+                  required
                   className="bg-secondary/80 border-border/50 focus:border-gold focus:ring-gold/20 text-foreground placeholder:text-muted-foreground h-12 rounded-xl transition-all duration-300"
                 />
               </div>
@@ -139,6 +199,7 @@ export function Contact() {
                 </label>
                 <Input
                   id="subject"
+                  name="subject"
                   placeholder="موضوع الرسالة"
                   className="bg-secondary/80 border-border/50 focus:border-gold focus:ring-gold/20 text-foreground placeholder:text-muted-foreground h-12 rounded-xl transition-all duration-300"
                 />
@@ -152,18 +213,25 @@ export function Contact() {
                 </label>
                 <Textarea
                   id="message"
+                  name="message"
                   rows={5}
                   placeholder="اكتب رسالتك هنا..."
+                  required
                   className="bg-secondary/80 border-border/50 focus:border-gold focus:ring-gold/20 text-foreground placeholder:text-muted-foreground rounded-xl resize-none transition-all duration-300"
                 />
               </div>
               <Button
                 type="submit"
                 size="lg"
+                disabled={loading}
                 className="bg-gold text-primary-foreground hover:bg-gold-light transition-all duration-500 hover:shadow-xl hover:shadow-gold/25 hover:scale-[1.02] active:scale-[0.98] w-full h-14 rounded-xl text-base font-bold"
               >
-                <Send className="ml-2 h-5 w-5" />
-                {'إرسال الرسالة'}
+                {loading ? (
+                  <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="ml-2 h-5 w-5" />
+                )}
+                {loading ? 'جاري الإرسال...' : 'إرسال الرسالة'}
               </Button>
             </form>
           </div>
