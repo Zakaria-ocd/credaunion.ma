@@ -42,7 +42,7 @@ export default async function ArticlePage({ params }: { params: { slug: string }
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-transparent" />
         
         <div className="absolute bottom-0 left-0 right-0 py-12">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">

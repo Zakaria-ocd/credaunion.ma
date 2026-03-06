@@ -19,13 +19,20 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data)
+  return NextResponse.json({ admins: data, currentAdminEmail: session.email })
 }
 
 export async function POST(request: NextRequest) {
   const session = await getSession()
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (session.email !== "admin_2026@gmail.com") {
+    return NextResponse.json(
+      { error: "غير مصرح لك بإضافة مشرفين" },
+      { status: 403 }
+    )
   }
 
   const body = await request.json()
