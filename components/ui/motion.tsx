@@ -13,7 +13,7 @@ type AnimationVariant =
   | "flip-up"
   | "blur-in"
 
-interface MotionProps {
+interface MotionProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode
   variant?: AnimationVariant
   delay?: number
@@ -67,6 +67,7 @@ export function Motion({
   className,
   once = true,
   threshold = 0.15,
+  ...props
 }: MotionProps) {
   const ref = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -102,6 +103,7 @@ export function Motion({
         transition: `all ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
         willChange: "transform, opacity, filter",
       }}
+      {...props}
     >
       {children}
     </div>

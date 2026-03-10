@@ -14,9 +14,11 @@ export interface Article {
   content: string
   excerpt: string
   cover_image_url: string
+  images: string[]
   published_at: string | null
   created_at: string
   author_id: string | null
+  category: string | null
 }
 
 export interface ContactMessage {

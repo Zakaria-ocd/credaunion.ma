@@ -13,7 +13,7 @@ export async function PUT(
 
   const { id } = await params
   const body = await request.json()
-  const { title, slug, content, excerpt, cover_image_url, published } = body
+  const { title, slug, content, excerpt, cover_image_url, images, published, category } = body
 
   const supabase = createAdminClient()
   const { data, error } = await supabase
@@ -24,7 +24,9 @@ export async function PUT(
       content: content || "",
       excerpt: excerpt || "",
       cover_image_url: cover_image_url || "",
+      images: images || [],
       published_at: published ? new Date().toISOString() : null,
+      category: category || null,
     })
     .eq("id", id)
     .select()
@@ -49,25 +51,41 @@ export async function DELETE(
   const { id } = await params
   const supabase = createAdminClient()
 
-  // 1. Fetch the article to get the cover_image_url
+  // 1. Fetch the article to get the cover_image_url and images array
   const { data: article } = await supabase
     .from("articles")
-    .select("cover_image_url")
+    .select("cover_image_url, images")
     .eq("id", id)
     .single()
 
-  // 2. Delete the image from storage if it exists and is a Supabase Storage URL
+  // 2. Delete the images from storage if they exist
+  const filesToDelete: string[] = []
+  
+  // Add cover image if it exists
   if (article?.cover_image_url && article.cover_image_url.includes("article-images")) {
-    try {
-      // Extract the path from the URL
-      // Example: https://.../storage/v1/object/public/article-images/articles/filename.jpg
-      const urlParts = article.cover_image_url.split("article-images/")
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1]
-        await supabase.storage.from("article-images").remove([filePath])
+    const urlParts = article.cover_image_url.split("article-images/")
+    if (urlParts.length > 1) {
+      filesToDelete.push(urlParts[1])
+    }
+  }
+
+  // Add gallery images if they exist
+  if (article?.images && Array.isArray(article.images) && article.images.length > 0) {
+    article.images.forEach((imgUrl: string) => {
+      if (imgUrl && imgUrl.includes("article-images")) {
+        const urlParts = imgUrl.split("article-images/")
+        if (urlParts.length > 1) {
+          filesToDelete.push(urlParts[1])
+        }
       }
+    })
+  }
+
+  if (filesToDelete.length > 0) {
+    try {
+      await supabase.storage.from("article-images").remove(filesToDelete)
     } catch (e) {
-      console.error("Failed to delete image from storage:", e)
+      console.error("Failed to delete images from storage:", e)
     }
   }
 
