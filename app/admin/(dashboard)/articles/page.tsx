@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Pencil, Trash2, Loader2, Eye, EyeOff } from "lucide-react"
 import { ImageUpload } from "../../components/image-upload"
+import { MultipleImageUpload } from "../../components/multiple-image-upload"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 
@@ -57,7 +58,9 @@ interface ArticleForm {
   content: string
   excerpt: string
   cover_image_url: string
+  images: string[]
   published: boolean
+  category: string
 }
 
 const emptyForm: ArticleForm = {
@@ -66,7 +69,9 @@ const emptyForm: ArticleForm = {
   content: "",
   excerpt: "",
   cover_image_url: "",
+  images: [],
   published: false,
+  category: "مقالات",
 }
 
 export default function AdminArticlesPage() {
@@ -149,7 +154,9 @@ export default function AdminArticlesPage() {
       content: article.content,
       excerpt: article.excerpt,
       cover_image_url: article.cover_image_url,
+      images: article.images || [],
       published: article.published_at !== null,
+      category: article.category || "مقالات",
     })
     setDialogOpen(true)
   }
@@ -169,6 +176,7 @@ export default function AdminArticlesPage() {
         content: article.content,
         excerpt: article.excerpt,
         cover_image_url: article.cover_image_url,
+        images: article.images || [],
         published: article.published_at === null,
       }),
     })
@@ -228,6 +236,21 @@ export default function AdminArticlesPage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="category">التصنيف</Label>
+                <select
+                  id="category"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="flex h-10 w-full rounded-md border border-border/50 bg-secondary/80 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="مقالات">مقالات</option>
+                  <option value="رؤى السوق">رؤى السوق</option>
+                  <option value="التطوير العقاري">التطوير العقاري</option>
+                  <option value="التخطيط العقاري">التخطيط العقاري</option>
+                  <option value="أخبار">أخبار</option>
+                </select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="excerpt">المقتطف</Label>
                 <Textarea
                   id="excerpt"
@@ -249,11 +272,20 @@ export default function AdminArticlesPage() {
                   className="bg-secondary/80 border-border/50 resize-none"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
+                <Label>الصورة الرئيسية</Label>
                 <ImageUpload 
                   value={form.cover_image_url} 
                   onChange={(url) => setForm({ ...form, cover_image_url: url })}
                   onDelete={handleImageDelete}
+                />
+              </div>
+              <div className="space-y-3 pt-4 pb-2 border-t border-border/50">
+                <MultipleImageUpload 
+                  value={form.images}
+                  onChange={(urls) => setForm({ ...form, images: urls })}
+                  onDelete={handleImageDelete}
+                  maxImages={5}
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -298,6 +330,7 @@ export default function AdminArticlesPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border/50">
                 <TableHead className="text-right">العنوان</TableHead>
+                <TableHead className="text-right">التصنيف</TableHead>
                 <TableHead className="text-right">الرابط</TableHead>
                 <TableHead className="text-right">الحالة</TableHead>
                 <TableHead className="text-right">التاريخ</TableHead>
@@ -309,6 +342,11 @@ export default function AdminArticlesPage() {
                 <TableRow key={article.id} className="border-border/50">
                   <TableCell className="font-medium max-w-[250px] truncate">
                     {article.title}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-normal border-gold/20 text-gold bg-gold/5 whitespace-nowrap">
+                      {article.category || "مقالات"}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm max-w-[150px] truncate" dir="ltr">
                     {article.slug}

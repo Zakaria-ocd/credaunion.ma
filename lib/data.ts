@@ -167,41 +167,6 @@ export const testimonials: Testimonial[] = [
   },
 ]
 
-export const articles: Article[] = [
-  {
-    id: "1",
-    image: "/images/article-1.jpg",
-    title: "كيف تؤثر أسعار الفائدة المرتفعة على محفظتك العقارية",
-    excerpt:
-      "فهم العلاقة بين أسعار الفائدة وتوزيع الأصول أمر بالغ الأهمية للحفاظ على أداء المحفظة العقارية في 2026.",
-    date: "28 فبراير 2026",
-    category: "رؤى السوق",
-    readTime: "5 دقائق قراءة",
-    slug: "interest-rates-impact"
-  },
-  {
-    id: "2",
-    image: "/images/article-2.jpg",
-    title: "5 استراتيجيات فعالة ضريبياً للمستثمرين العقاريين",
-    excerpt:
-      "اكتشف أساليب مجربة لتقليل التزاماتك الضريبية مع تعظيم نمو الثروة من خلال التخطيط العقاري الاستراتيجي.",
-    date: "20 فبراير 2026",
-    category: "التخطيط العقاري",
-    readTime: "7 دقائق قراءة",
-    slug: "tax-strategies"
-  },
-  {
-    id: "3",
-    image: "/images/article-3.jpg",
-    title: "التنقل في سوق العقارات المتقلب: دليل المستثمر",
-    excerpt:
-      "اعتبارات رئيسية لقادة الأعمال الذين يقيّمون فرص الاستثمار العقاري في البيئة الاقتصادية الحالية.",
-    date: "14 فبراير 2026",
-    category: "التطوير العقاري",
-    readTime: "6 دقائق قراءة",
-    slug: "market-volatility"
-  },
-]
 
 export const stats = [
   { value: "+25", label: "سنة خبرة" },

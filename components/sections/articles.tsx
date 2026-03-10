@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { articles as staticArticles } from "@/lib/data"
 import { Motion } from "@/components/ui/motion"
-import { ArrowLeft, Calendar, Clock, Tag, ArrowUpLeft, Loader2 } from "lucide-react"
+import { ArrowLeft, Calendar, Tag, Loader2 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import type { Article } from "@/lib/types"
@@ -70,7 +69,7 @@ export function Articles({ initialArticles = [], initialTotalPages = 0 }: Articl
   }
 
   // Map dynamic data to the structure the user's design expects
-  const articlesToDisplay = (articles.length > 0 ? articles : staticArticles).map(art => ({
+const articlesToDisplay = articles.map((art: Article) => ({
     id: art.id,
     title: art.title,
     excerpt: art.excerpt,
@@ -81,8 +80,7 @@ export function Articles({ initialArticles = [], initialTotalPages = 0 }: Articl
       month: "long",
       day: "numeric",
     }),
-    category: (art as any).category || "رؤى السوق",
-    readTime: (art as any).readTime || "5 دقائق قراءة",
+  
     slug: (art as any).slug
   }))
 
@@ -144,40 +142,39 @@ export function Articles({ initialArticles = [], initialTotalPages = 0 }: Articl
                 delay={index * 100}
               >
                 <Link href={`/articles/${article.slug}`}>
-                  <article className="group h-full flex flex-col rounded-3xl border border-border/50 bg-card/50 overflow-hidden transition-all duration-500 hover:border-gold/40 hover:shadow-2xl hover:shadow-gold/[0.08] hover:-translate-y-2">
-                    <div className="relative h-56 w-full overflow-hidden">
+                  <article className="group h-full flex flex-col rounded-3xl border border-border/50 bg-card/50 overflow-hidden transition-all duration-500 hover:border-gold/40 hover:shadow-2xl hover:shadow-gold/15 hover:-translate-y-2">
+                    <div className="relative h-64 w-full overflow-hidden">
                       <Image
                         src={article.image || "/images/placeholder.jpg"}
                         alt={article.title}
                         fill
                         className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
                       />
-                      <div className="absolute top-4 right-4 rounded-full bg-gold text-primary-foreground px-4 py-1.5 text-xs font-bold shadow-lg shadow-gold/30">
-                        {article.category}
-                      </div>
+                      <div className="absolute inset-0 bg-linear-to-t from-background/90 via-background/20 to-transparent opacity-60 transition-opacity duration-500 group-hover:opacity-80" />
+                      
+                    
                     </div>
                     
-                    <div className="flex-1 p-8">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {article.date}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
-                          {article.readTime}
-                        </span>
+                    <div className="flex-1 p-8 relative z-10 bg-card/30 backdrop-blur-sm flex flex-col justify-between -mt-6">
+                      <div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                          <span className="flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-2.5 py-1 rounded-md border border-border/50 shadow-sm">
+                            <Calendar className="h-3.5 w-3.5 text-gold" />
+                            {article.date}
+                          </span>
+                         
+                        </div>
+                        
+                        <h3 className="text-xl font-bold mb-4 text-foreground leading-tight transition-colors duration-300 group-hover:text-gold line-clamp-2">
+                          {article.title}
+                        </h3>
+                        
+                        <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-3">
+                          {article.excerpt}
+                        </p>
                       </div>
                       
-                      <h3 className="text-xl font-bold mb-4 text-foreground leading-tight transition-colors duration-300 group-hover:text-gold line-clamp-2">
-                        {article.title}
-                      </h3>
-                      
-                      <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-3">
-                        {article.excerpt}
-                      </p>
-                      
-                      <div className="flex items-center gap-2 text-gold font-medium transition-all duration-300 group-hover:gap-3 mt-auto">
+                      <div className="flex items-center gap-2 text-gold font-medium transition-all duration-300 group-hover:gap-3 mt-auto pt-4 border-t border-border/50">
                         <span>{'اقرأ المزيد'}</span>
                         <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-1" />
                       </div>
