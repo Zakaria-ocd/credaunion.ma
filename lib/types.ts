@@ -18,7 +18,6 @@ export interface Article {
   published_at: string | null
   created_at: string
   author_id: string | null
-  category: string | null
 }
 
 export interface ContactMessage {

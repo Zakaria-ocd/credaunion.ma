@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
-  const { title, slug, content, excerpt, cover_image_url, images, published, category } = body
+  const { title, slug, content, excerpt, cover_image_url, images, published } = body
 
   if (!title || !slug) {
     return NextResponse.json({ error: "العنوان والرابط مطلوبان" }, { status: 400 })
@@ -46,7 +46,6 @@ export async function POST(request: NextRequest) {
       images: images || [],
       published_at: published ? new Date().toISOString() : null,
       author_id: session.id,
-      category: category || null,
     })
     .select()
     .single()
