@@ -13,7 +13,7 @@ export async function PUT(
 
   const { id } = await params
   const body = await request.json()
-  const { title, slug, content, excerpt, cover_image_url, images, published, category } = body
+  const { title, slug, content, excerpt, cover_image_url, images, published } = body
 
   const supabase = createAdminClient()
   const { data, error } = await supabase
@@ -26,7 +26,6 @@ export async function PUT(
       cover_image_url: cover_image_url || "",
       images: images || [],
       published_at: published ? new Date().toISOString() : null,
-      category: category || null,
     })
     .eq("id", id)
     .select()

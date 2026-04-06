@@ -60,7 +60,6 @@ interface ArticleForm {
   cover_image_url: string
   images: string[]
   published: boolean
-  category: string
 }
 
 const emptyForm: ArticleForm = {
@@ -71,7 +70,6 @@ const emptyForm: ArticleForm = {
   cover_image_url: "",
   images: [],
   published: false,
-  category: "مقالات",
 }
 
 export default function AdminArticlesPage() {
@@ -155,8 +153,7 @@ export default function AdminArticlesPage() {
       excerpt: article.excerpt,
       cover_image_url: article.cover_image_url,
       images: article.images || [],
-      published: article.published_at !== null,
-      category: article.category || "مقالات",
+      published: article.published_at !== null
     })
     setDialogOpen(true)
   }
@@ -234,21 +231,6 @@ export default function AdminArticlesPage() {
                   dir="ltr"
                   className="bg-secondary/80 border-border/50"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">التصنيف</Label>
-                <select
-                  id="category"
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="flex h-10 w-full rounded-md border border-border/50 bg-secondary/80 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="مقالات">مقالات</option>
-                  <option value="رؤى السوق">رؤى السوق</option>
-                  <option value="التطوير العقاري">التطوير العقاري</option>
-                  <option value="التخطيط العقاري">التخطيط العقاري</option>
-                  <option value="أخبار">أخبار</option>
-                </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="excerpt">المقتطف</Label>
@@ -330,7 +312,6 @@ export default function AdminArticlesPage() {
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border/50">
                 <TableHead className="text-right">العنوان</TableHead>
-                <TableHead className="text-right">التصنيف</TableHead>
                 <TableHead className="text-right">الرابط</TableHead>
                 <TableHead className="text-right">الحالة</TableHead>
                 <TableHead className="text-right">التاريخ</TableHead>
@@ -343,12 +324,8 @@ export default function AdminArticlesPage() {
                   <TableCell className="font-medium max-w-[250px] truncate">
                     {article.title}
                   </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-normal border-gold/20 text-gold bg-gold/5 whitespace-nowrap">
-                      {article.category || "مقالات"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm max-w-[150px] truncate" dir="ltr">
+                  
+                  <TableCell className="text-muted-foreground text-end text-sm max-w-[150px] truncate" dir="ltr">
                     {article.slug}
                   </TableCell>
                   <TableCell>
